@@ -104,3 +104,10 @@ func writeAtomic(path string, b []byte) error {
 	}
 	return os.Rename(tmp.Name(), path)
 }
+
+// WriteAtomic writes b to path via a temp file + rename in the same
+// directory. Shared with the bootstrap store, which keeps its files under a
+// subdirectory of the cache dir.
+func WriteAtomic(path string, b []byte) error {
+	return writeAtomic(path, b)
+}
