@@ -67,9 +67,10 @@ standard library only.**
 
 ## Status
 
-Scaffold only (`_wip/`, local). CLI dispatch + stubs + tests build and pass;
-`lookup` / `cache` / `mcp` are not implemented. Next: Phase 1 (query
-validation, bootstrap, RDAP client, cache, lookup command). Design:
+Phase 1 implemented (`_wip/`, local only — not yet pushed): `lookup` works
+end-to-end over RDAP with caching for domains, IPs, and ASNs. `cache` and
+`mcp` are stubs. Next: Phase 2 (port 43 WHOIS fallback, IDN punycode,
+cache subcommand, MCP server). Design:
 [docs/ja/whois-lookup-rfp.ja.md](docs/ja/whois-lookup-rfp.ja.md).
 
 ## Communication Language

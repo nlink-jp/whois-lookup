@@ -16,21 +16,26 @@ The registration-focused sibling of
 [tor-exit-lookup](https://github.com/nlink-jp/tor-exit-lookup) (Tor exit
 membership) — together they profile an indicator from four angles.
 
-> **Status: in development (pre-release).** The CLI skeleton builds and the
-> command surface below is final, but `lookup`, `cache`, and `mcp` are not
-> implemented yet. See [docs/en/whois-lookup-rfp.md](docs/en/whois-lookup-rfp.md)
-> for the full design.
+> **Status: in development (pre-release).** Phase 1 is implemented: RDAP
+> lookups for domains, IPs, and ASNs work end-to-end with caching. The port
+> 43 WHOIS fallback (RDAP-less ccTLDs such as .jp), IDN conversion, the
+> `cache` subcommand, and the MCP server arrive in Phase 2. See
+> [docs/en/whois-lookup-rfp.md](docs/en/whois-lookup-rfp.md) for the full
+> design.
 
-## Planned usage
+## Usage
 
 ```console
 $ whois-lookup lookup example.com
 $ whois-lookup lookup 93.184.216.34 --json
 $ whois-lookup lookup AS13335
-$ whois-lookup lookup 日本語.jp        # IDN: converted to punycode in-house
-$ whois-lookup cache status
-$ whois-lookup mcp                     # local MCP server (stdio)
+$ whois-lookup lookup 日本語.jp        # Phase 2 — IDN converted to punycode in-house
+$ whois-lookup cache status            # Phase 2
+$ whois-lookup mcp                     # Phase 2 — local MCP server (stdio)
 ```
+
+`lookup` exit codes: `0` success, `1` the object does not exist (RDAP 404),
+`2` error (invalid input, network failure).
 
 - Input type (IP / ASN / domain) is auto-detected; `--type` overrides.
 - Input that is valid as none of the three is **rejected before any network

@@ -15,20 +15,25 @@ WHOIS にフォールバックします。**credential ゼロ・外部依存ゼ�
 判定)の姉妹品で、登録情報を担当します — 4 ツールで指標を 4 つの角度から
 プロファイルできます。
 
-> **Status: 開発中(プレリリース)。** CLI 骨格はビルド可能で下記のコマンド
-> 体裁は確定済みですが、`lookup` / `cache` / `mcp` は未実装です。設計の全容は
+> **Status: 開発中(プレリリース)。** Phase 1 実装済み: ドメイン・IP・ASN の
+> RDAP ルックアップがキャッシュ込みで end-to-end 動作します。port 43 WHOIS
+> フォールバック(.jp 等の RDAP 未対応 ccTLD)、IDN 変換、`cache`
+> サブコマンド、MCP サーバーは Phase 2 で実装予定。設計の全容は
 > [docs/ja/whois-lookup-rfp.ja.md](docs/ja/whois-lookup-rfp.ja.md) を参照。
 
-## 使い方(予定)
+## 使い方
 
 ```console
 $ whois-lookup lookup example.com
 $ whois-lookup lookup 93.184.216.34 --json
 $ whois-lookup lookup AS13335
-$ whois-lookup lookup 日本語.jp        # IDN: 自前実装で punycode 変換
-$ whois-lookup cache status
-$ whois-lookup mcp                     # ローカル MCP サーバー (stdio)
+$ whois-lookup lookup 日本語.jp        # Phase 2 — IDN を自前実装で punycode 変換
+$ whois-lookup cache status            # Phase 2
+$ whois-lookup mcp                     # Phase 2 — ローカル MCP サーバー (stdio)
 ```
+
+`lookup` の終了コード: `0` 成功、`1` 対象が存在しない(RDAP 404)、`2`
+エラー(不正入力・ネットワーク障害)。
 
 - 入力種別(IP / ASN / ドメイン)は自動判別。`--type` で明示可能
 - 3 種のいずれとしても解釈できない入力は**ネットワーク送信前に拒否**

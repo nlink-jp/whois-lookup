@@ -11,11 +11,12 @@ import (
 )
 
 // Exit codes. lookup is not a membership test, so unlike tor-exit-lookup's
-// grep-style contract the codes mean: 0 = success, 1 = the object does not
-// exist (RDAP 404 / WHOIS no match; added with Phase 1's lookup), 2 = error.
+// grep-style contract a not-found is a successful answer about a
+// nonexistent object, distinct from failure.
 const (
-	exitOK    = 0 // lookup succeeded
-	exitError = 2 // usage / validation / network error
+	exitOK       = 0 // lookup succeeded
+	exitNotFound = 1 // the object does not exist (RDAP 404 / WHOIS no match)
+	exitError    = 2 // usage / validation / network error
 )
 
 // Run dispatches a subcommand and returns a process exit code.
@@ -27,7 +28,7 @@ func Run(args []string, version string) int {
 	cmd, rest := args[0], args[1:]
 	switch cmd {
 	case "lookup":
-		return cmdLookup(rest)
+		return runLookup(rest, version, os.Stdout, os.Stderr)
 	case "cache":
 		return cmdCache(rest)
 	case "mcp":
@@ -82,12 +83,6 @@ Data: RDAP via the IANA bootstrap registry (https://data.iana.org/rdap/),
 falling back to port 43 WHOIS (whois.iana.org referral chain) for TLDs
 without RDAP. All endpoints are public; no credentials.
 `)
-}
-
-// cmdLookup will resolve the query through the engine (Phase 1).
-func cmdLookup(_ []string) int {
-	fmt.Fprintln(os.Stderr, "lookup: not implemented yet (Phase 1)")
-	return exitError
 }
 
 // cmdCache will report / clear the query cache (Phase 2).

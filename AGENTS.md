@@ -76,8 +76,10 @@ internal/mcp/           Zero-dep stdio JSON-RPC 2.0 server + tools.             
 - **Fetch etiquette:** never retry aggressively; respect the cache. The
   bootstrap files change rarely — ETag conditional GET keeps revalidation
   free.
-- **Status: scaffold only.** `lookup` / `cache` / `mcp` are stubs returning
-  exit 2. Phase 1 (validation, bootstrap, RDAP, cache, lookup) is next.
+- **Status: Phase 1 implemented.** `lookup` works end-to-end over RDAP with
+  caching; `cache` / `mcp` are stubs returning exit 2. Phase 2 (WHOIS
+  fallback, IDN, cache subcommand, MCP) is next. A no-RDAP TLD (e.g. .jp)
+  currently errors with a pointer to the Phase 2 fallback.
 
 ## Data sources
 

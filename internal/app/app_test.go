@@ -19,7 +19,8 @@ func TestRunExitCodes(t *testing.T) {
 		{"help", []string{"help"}, exitOK},
 		{"help long flag", []string{"--help"}, exitOK},
 		{"help short flag", []string{"-h"}, exitOK},
-		{"lookup stub", []string{"lookup", "example.com"}, exitError},
+		{"lookup invalid input", []string{"lookup", "!!!"}, exitError},
+		{"lookup missing arg", []string{"lookup"}, exitError},
 		{"cache stub", []string{"cache", "status"}, exitError},
 		{"mcp stub", []string{"mcp"}, exitError},
 	}
