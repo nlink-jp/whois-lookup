@@ -15,11 +15,25 @@ WHOIS にフォールバックします。**credential ゼロ・外部依存ゼ�
 判定)の姉妹品で、登録情報を担当します — 4 ツールで指標を 4 つの角度から
 プロファイルできます。
 
-> **Status: 開発中(プレリリース)。** Phase 1・2 実装済み: RDAP ルックアップ、
-> port 43 WHOIS フォールバック(.jp 等の RDAP 未対応 ccTLD)、IDN punycode
-> 自前変換、`cache` サブコマンド、MCP サーバー。残るは Phase 3(リリース)。
-> 設計の全容は
-> [docs/ja/whois-lookup-rfp.ja.md](docs/ja/whois-lookup-rfp.ja.md) を参照。
+## インストール
+
+Homebrew(macOS, Apple Silicon — 署名・notarize 済みビルド済みバイナリ):
+
+```sh
+brew install nlink-jp/tap/whois-lookup
+```
+
+または [releases ページ](https://github.com/nlink-jp/whois-lookup/releases)
+から linux/amd64, linux/arm64, darwin/arm64, windows/amd64 のビルド済み
+バイナリを取得してください。
+
+ソースからビルドする場合(Go 1.25+):
+
+```sh
+git clone https://github.com/nlink-jp/whois-lookup
+cd whois-lookup
+make build          # → dist/whois-lookup
+```
 
 ## 使い方
 

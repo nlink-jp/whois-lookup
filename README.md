@@ -16,12 +16,25 @@ The registration-focused sibling of
 [tor-exit-lookup](https://github.com/nlink-jp/tor-exit-lookup) (Tor exit
 membership) — together they profile an indicator from four angles.
 
-> **Status: in development (pre-release).** Phases 1 and 2 are implemented:
-> RDAP lookups, the port 43 WHOIS fallback (RDAP-less ccTLDs such as .jp),
-> in-house IDN punycode conversion, the `cache` subcommand, and the MCP
-> server. Remaining: Phase 3 (release). See
-> [docs/en/whois-lookup-rfp.md](docs/en/whois-lookup-rfp.md) for the full
-> design.
+## Install
+
+Homebrew (macOS, Apple Silicon — signed & notarized prebuilt binary):
+
+```sh
+brew install nlink-jp/tap/whois-lookup
+```
+
+Or grab a prebuilt binary for linux/amd64, linux/arm64, darwin/arm64, or
+windows/amd64 from the
+[releases page](https://github.com/nlink-jp/whois-lookup/releases).
+
+To build from source (Go 1.25+):
+
+```sh
+git clone https://github.com/nlink-jp/whois-lookup
+cd whois-lookup
+make build          # → dist/whois-lookup
+```
 
 ## Usage
 

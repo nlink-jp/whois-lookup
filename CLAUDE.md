@@ -67,10 +67,9 @@ standard library only.**
 
 ## Status
 
-Phases 1 + 2 implemented (`_wip/`, local only — not yet pushed): RDAP
-lookups with caching, port 43 WHOIS fallback for RDAP-less ccTLDs, IDN
-punycode, `cache status|clear`, and the stdio MCP server. Next: Phase 3
-(release + integration). Not yet released; no version tags. Design:
+v0.1.0 released (Phases 1 + 2): RDAP lookups with caching, port 43 WHOIS
+fallback for RDAP-less ccTLDs, IDN punycode, `cache status|clear`, and the
+stdio MCP server. Design:
 [docs/ja/whois-lookup-rfp.ja.md](docs/ja/whois-lookup-rfp.ja.md).
 
 ## Communication Language

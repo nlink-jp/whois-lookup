@@ -2,7 +2,9 @@
 
 All notable changes to whois-lookup are documented here.
 
-## [Unreleased]
+## [0.1.0] - 2026-07-16
+
+Initial release.
 
 ### Added
 

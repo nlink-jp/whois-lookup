@@ -76,9 +76,9 @@ internal/mcp/           Zero-dep stdio JSON-RPC 2.0 server + tools.             
 - **Fetch etiquette:** never retry aggressively; respect the cache. The
   bootstrap files change rarely — ETag conditional GET keeps revalidation
   free.
-- **Status: Phases 1 + 2 implemented.** Everything in the layout above is
-  live; Phase 3 (release + integration) is next. A no-RDAP TLD (e.g. .jp)
-  transparently falls back to port 43 — `source: "whois"` in the result.
+- **Status: v0.1.0 released.** Everything in the layout above is live. A
+  no-RDAP TLD (e.g. .jp) transparently falls back to port 43 —
+  `source: "whois"` in the result.
 - **WHOIS no-match detection is best-effort** (there is no protocol-level
   signal); unrecognized phrasings return a normal result whose raw text the
   caller reads. The pattern list lives in `whois.isNoMatch`.
