@@ -63,6 +63,21 @@ func (s *Store) Put(key string, result json.RawMessage, now time.Time) error {
 	return writeAtomic(filepath.Join(s.Dir, key), b)
 }
 
+// Count returns the number of cached query entries.
+func (s *Store) Count() int {
+	entries, err := os.ReadDir(s.Dir)
+	if err != nil {
+		return 0
+	}
+	n := 0
+	for _, e := range entries {
+		if !e.IsDir() && strings.HasSuffix(e.Name(), ".json") {
+			n++
+		}
+	}
+	return n
+}
+
 // Clear removes every cached query entry (top-level *.json files only —
 // bootstrap files live in a subdirectory and are kept). It returns the
 // number of entries removed.

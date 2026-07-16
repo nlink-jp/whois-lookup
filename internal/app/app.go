@@ -85,10 +85,8 @@ without RDAP. All endpoints are public; no credentials.
 `)
 }
 
-// cmdCache will report / clear the query cache (Phase 2).
-func cmdCache(_ []string) int {
-	fmt.Fprintln(os.Stderr, "cache: not implemented yet (Phase 2)")
-	return exitError
+func cmdCache(args []string) int {
+	return runCache(args, os.Stdout, os.Stderr)
 }
 
 // cmdMCP will run the stdio MCP server (Phase 2).

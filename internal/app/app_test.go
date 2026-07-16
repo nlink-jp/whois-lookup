@@ -21,7 +21,7 @@ func TestRunExitCodes(t *testing.T) {
 		{"help short flag", []string{"-h"}, exitOK},
 		{"lookup invalid input", []string{"lookup", "!!!"}, exitError},
 		{"lookup missing arg", []string{"lookup"}, exitError},
-		{"cache stub", []string{"cache", "status"}, exitError},
+		{"cache without subcommand", []string{"cache"}, exitError},
 		{"mcp stub", []string{"mcp"}, exitError},
 	}
 	for _, tt := range tests {

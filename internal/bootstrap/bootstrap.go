@@ -167,6 +167,31 @@ func writeMeta(path string, m *meta) error {
 	return cache.WriteAtomic(path, b)
 }
 
+// FileStatus reports one cached bootstrap file's freshness for `cache
+// status`.
+type FileStatus struct {
+	Name      string
+	FetchedAt time.Time
+	ETag      string
+}
+
+// Status lists the cached bootstrap files under dir, sorted by name.
+func Status(dir string) []FileStatus {
+	var out []FileStatus
+	for _, name := range []string{"asn.json", "dns.json", "ipv4.json", "ipv6.json"} {
+		b, err := os.ReadFile(filepath.Join(dir, name+".meta"))
+		if err != nil {
+			continue
+		}
+		var m meta
+		if json.Unmarshal(b, &m) != nil {
+			continue
+		}
+		out = append(out, FileStatus{Name: name, FetchedAt: time.Unix(m.FetchedAtUnix, 0), ETag: m.ETag})
+	}
+	return out
+}
+
 // match returns the base URLs of the most specific service entry covering q,
 // normalized to a trailing slash.
 func match(reg *registryFile, q query.Query) []string {
