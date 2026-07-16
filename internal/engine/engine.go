@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"path/filepath"
 	"time"
@@ -13,6 +14,7 @@ import (
 	"github.com/nlink-jp/whois-lookup/internal/config"
 	"github.com/nlink-jp/whois-lookup/internal/query"
 	"github.com/nlink-jp/whois-lookup/internal/rdap"
+	"github.com/nlink-jp/whois-lookup/internal/whois"
 )
 
 // ErrNoRDAP means the query's registry provides no RDAP service. For domains
@@ -31,6 +33,11 @@ type RDAPClient interface {
 	Lookup(base string, q query.Query) (*rdap.Result, json.RawMessage, error)
 }
 
+// WhoisClient is the port 43 fallback (the whois package; faked in tests).
+type WhoisClient interface {
+	Lookup(q query.Query) (*whois.Record, error)
+}
+
 // Options modify a single lookup.
 type Options struct {
 	TypeHint query.Type // "" auto-detects
@@ -46,6 +53,7 @@ type Engine struct {
 	Cache     *cache.Store
 	Bootstrap Resolver
 	RDAP      RDAPClient
+	Whois     WhoisClient
 	Now       func() time.Time
 }
 
@@ -64,7 +72,14 @@ func New(cfg *config.Config, version string) *Engine {
 			UserAgent:  ua,
 		},
 		RDAP: &rdap.Client{Client: httpClient, UserAgent: ua},
-		Now:  time.Now,
+		Whois: &whois.Client{
+			Dial: func(addr string) (net.Conn, error) {
+				return (&net.Dialer{Timeout: cfg.Timeout}).Dial("tcp", addr)
+			},
+			Root:    cfg.WhoisRoot,
+			Timeout: cfg.Timeout,
+		},
+		Now: time.Now,
 	}
 }
 
@@ -87,6 +102,7 @@ func (e *Engine) Lookup(input string, opts Options) (*rdap.Result, error) {
 				res.Cached = true
 				if !opts.Raw {
 					res.Raw = nil
+					res.RawText = ""
 				}
 				return &res, nil
 			}
@@ -96,8 +112,12 @@ func (e *Engine) Lookup(input string, opts Options) (*rdap.Result, error) {
 
 	bases, err := e.Bootstrap.Resolve(q, now)
 	if err != nil {
+		if errors.Is(err, bootstrap.ErrNoService) && q.Type == query.TypeDomain && e.Whois != nil {
+			// RDAP-less ccTLD (e.g. .jp): the port 43 fallback takes over.
+			return e.lookupWhois(q, key, now, opts)
+		}
 		if errors.Is(err, bootstrap.ErrNoService) {
-			return nil, fmt.Errorf("%w for %q — the port 43 WHOIS fallback arrives in Phase 2", ErrNoRDAP, q.Value)
+			return nil, fmt.Errorf("%w for %q", ErrNoRDAP, q.Value)
 		}
 		return nil, err
 	}
@@ -118,12 +138,46 @@ func (e *Engine) Lookup(input string, opts Options) (*rdap.Result, error) {
 	}
 
 	res.Raw = raw
+	return e.finish(res, key, now, opts), nil
+}
+
+// lookupWhois is the port 43 path for domains whose TLD has no RDAP.
+func (e *Engine) lookupWhois(q query.Query, key string, now time.Time, opts Options) (*rdap.Result, error) {
+	rec, err := e.Whois.Lookup(q)
+	if err != nil {
+		if errors.Is(err, whois.ErrNotFound) {
+			return nil, fmt.Errorf("%w: %s (WHOIS no match)", rdap.ErrNotFound, q.Value)
+		}
+		return nil, err
+	}
+	res := &rdap.Result{
+		Query:       q.Original,
+		Type:        string(q.Type),
+		Source:      "whois",
+		Registrar:   rec.Registrar,
+		Created:     rec.Created,
+		Updated:     rec.Updated,
+		Expires:     rec.Expires,
+		Nameservers: rec.Nameservers,
+		Status:      rec.Status,
+		RawText:     rec.Raw,
+	}
+	if q.Original != q.Value {
+		res.QueryASCII = q.Value
+	}
+	return e.finish(res, key, now, opts), nil
+}
+
+// finish caches the fresh result (best-effort — a cache-write failure must
+// not fail a successful lookup) and strips the raw payloads unless
+// requested.
+func (e *Engine) finish(res *rdap.Result, key string, now time.Time, opts Options) *rdap.Result {
 	if b, merr := json.Marshal(res); merr == nil {
-		// Best-effort: a cache-write failure must not fail a successful lookup.
 		_ = e.Cache.Put(key, b, now)
 	}
 	if !opts.Raw {
 		res.Raw = nil
+		res.RawText = ""
 	}
-	return res, nil
+	return res
 }

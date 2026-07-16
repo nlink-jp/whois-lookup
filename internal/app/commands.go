@@ -134,4 +134,7 @@ func printText(w io.Writer, res *rdap.Result) {
 	if len(res.Raw) > 0 {
 		fmt.Fprintf(w, "raw:\n%s\n", res.Raw)
 	}
+	if res.RawText != "" {
+		fmt.Fprintf(w, "raw:\n%s\n", res.RawText)
+	}
 }

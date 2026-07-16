@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -37,7 +38,30 @@ func newStack(t *testing.T) string {
 	srv = httptest.NewServer(mux)
 	t.Cleanup(srv.Close)
 
+	// A one-shot local WHOIS root so the .jp fallback path never leaves the
+	// test (and never reaches the real whois.iana.org).
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { ln.Close() })
+	go func() {
+		for {
+			conn, err := ln.Accept()
+			if err != nil {
+				return
+			}
+			go func(conn net.Conn) {
+				defer conn.Close()
+				buf := make([]byte, 256)
+				conn.Read(buf)
+				fmt.Fprint(conn, "[登録年月日] 2001/05/30\n[状態] Active\nregistrar: JP Registrar\n")
+			}(conn)
+		}
+	}()
+
 	t.Setenv("WHOIS_LOOKUP_BOOTSTRAP_URL", srv.URL+"/")
+	t.Setenv("WHOIS_LOOKUP_WHOIS_ROOT", ln.Addr().String())
 	t.Setenv("WHOIS_LOOKUP_CACHE_DIR", t.TempDir())
 	return filepath.Join(t.TempDir(), "absent-config.toml") // keep the user's real config out
 }
@@ -110,15 +134,33 @@ func TestLookupNotFoundExitCode(t *testing.T) {
 	}
 }
 
-func TestLookupNoRDAPServiceExitCode(t *testing.T) {
+func TestLookupWhoisFallback(t *testing.T) {
 	cfg := newStack(t)
 	var out, errb bytes.Buffer
-	// .jp is absent from the test bootstrap — Phase 1 surfaces the fallback gap.
-	if code := runLookup([]string{"example.jp", "-c", cfg}, "test", &out, &errb); code != exitError {
-		t.Fatalf("exit = %d, want %d", code, exitError)
+	// .jp is absent from the test bootstrap → port 43 fallback.
+	if code := runLookup([]string{"example.jp", "-c", cfg}, "test", &out, &errb); code != exitOK {
+		t.Fatalf("exit = %d, stderr = %s", code, errb.String())
 	}
-	if !strings.Contains(errb.String(), "Phase 2") {
-		t.Errorf("error should mention the Phase 2 fallback: %s", errb.String())
+	text := out.String()
+	for _, want := range []string{"source:        whois", "registrar:     JP Registrar", "created:       2001/05/30", "status:        Active"} {
+		if !strings.Contains(text, want) {
+			t.Errorf("fallback output missing %q:\n%s", want, text)
+		}
+	}
+}
+
+func TestLookupWhoisFallbackIDN(t *testing.T) {
+	cfg := newStack(t)
+	var out, errb bytes.Buffer
+	if code := runLookup([]string{"--json", "日本語.jp", "-c", cfg}, "test", &out, &errb); code != exitOK {
+		t.Fatalf("exit = %d, stderr = %s", code, errb.String())
+	}
+	var got map[string]any
+	if err := json.Unmarshal(out.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	if got["query"] != "日本語.jp" || got["query_ascii"] != "xn--wgv71a119e.jp" || got["source"] != "whois" {
+		t.Errorf("json = %v", got)
 	}
 }
 

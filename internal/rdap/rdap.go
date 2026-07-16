@@ -50,7 +50,8 @@ type Result struct {
 	Range        string          `json:"range,omitempty"` // ip allocation "start - end" / autnum "ASn - ASm"
 	Country      string          `json:"country,omitempty"`
 	AbuseContact *Contact        `json:"abuse_contact,omitempty"`
-	Raw          json.RawMessage `json:"raw,omitempty"`
+	Raw          json.RawMessage `json:"raw,omitempty"`      // raw RDAP response (source: rdap)
+	RawText      string          `json:"raw_text,omitempty"` // raw WHOIS response (source: whois)
 }
 
 // Client queries RDAP endpoints and normalizes responses.
