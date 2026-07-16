@@ -67,10 +67,10 @@ standard library only.**
 
 ## Status
 
-Phase 1 implemented (`_wip/`, local only — not yet pushed): `lookup` works
-end-to-end over RDAP with caching for domains, IPs, and ASNs. `cache` and
-`mcp` are stubs. Next: Phase 2 (port 43 WHOIS fallback, IDN punycode,
-cache subcommand, MCP server). Design:
+Phases 1 + 2 implemented (`_wip/`, local only — not yet pushed): RDAP
+lookups with caching, port 43 WHOIS fallback for RDAP-less ccTLDs, IDN
+punycode, `cache status|clear`, and the stdio MCP server. Next: Phase 3
+(release + integration). Not yet released; no version tags. Design:
 [docs/ja/whois-lookup-rfp.ja.md](docs/ja/whois-lookup-rfp.ja.md).
 
 ## Communication Language

@@ -16,10 +16,10 @@ The registration-focused sibling of
 [tor-exit-lookup](https://github.com/nlink-jp/tor-exit-lookup) (Tor exit
 membership) — together they profile an indicator from four angles.
 
-> **Status: in development (pre-release).** Phase 1 is implemented: RDAP
-> lookups for domains, IPs, and ASNs work end-to-end with caching. The port
-> 43 WHOIS fallback (RDAP-less ccTLDs such as .jp), IDN conversion, the
-> `cache` subcommand, and the MCP server arrive in Phase 2. See
+> **Status: in development (pre-release).** Phases 1 and 2 are implemented:
+> RDAP lookups, the port 43 WHOIS fallback (RDAP-less ccTLDs such as .jp),
+> in-house IDN punycode conversion, the `cache` subcommand, and the MCP
+> server. Remaining: Phase 3 (release). See
 > [docs/en/whois-lookup-rfp.md](docs/en/whois-lookup-rfp.md) for the full
 > design.
 
@@ -29,9 +29,9 @@ membership) — together they profile an indicator from four angles.
 $ whois-lookup lookup example.com
 $ whois-lookup lookup 93.184.216.34 --json
 $ whois-lookup lookup AS13335
-$ whois-lookup lookup 日本語.jp        # Phase 2 — IDN converted to punycode in-house
-$ whois-lookup cache status            # Phase 2
-$ whois-lookup mcp                     # Phase 2 — local MCP server (stdio)
+$ whois-lookup lookup 日本語.jp        # IDN → punycode in-house; .jp → WHOIS fallback
+$ whois-lookup cache status
+$ whois-lookup mcp                     # local MCP server (stdio)
 ```
 
 `lookup` exit codes: `0` success, `1` the object does not exist (RDAP 404),
@@ -41,9 +41,11 @@ $ whois-lookup mcp                     # Phase 2 — local MCP server (stdio)
 - Input that is valid as none of the three is **rejected before any network
   I/O** — a safety gate against protocol injection and wasted rate limits.
 - Results are cached locally (default TTL 24h); `--refresh` bypasses.
-- `--raw` includes the raw WHOIS text / RDAP response.
+- `--raw` includes the raw payload: `raw` (RDAP JSON) or `raw_text` (WHOIS).
 - Output states its `source` (`rdap` or `whois`) and, for IDN queries, the
   punycoded `query_ascii` form.
+- The MCP server exposes `lookup`, `cache_status`, and `get_usage`; tool
+  errors are structured (`{code, message}`).
 
 **What you can expect back:** since GDPR (2018), most registrant personal
 data is redacted ("REDACTED FOR PRIVACY"). The reliably available fields are

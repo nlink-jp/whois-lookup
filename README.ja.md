@@ -15,10 +15,10 @@ WHOIS にフォールバックします。**credential ゼロ・外部依存ゼ�
 判定)の姉妹品で、登録情報を担当します — 4 ツールで指標を 4 つの角度から
 プロファイルできます。
 
-> **Status: 開発中(プレリリース)。** Phase 1 実装済み: ドメイン・IP・ASN の
-> RDAP ルックアップがキャッシュ込みで end-to-end 動作します。port 43 WHOIS
-> フォールバック(.jp 等の RDAP 未対応 ccTLD)、IDN 変換、`cache`
-> サブコマンド、MCP サーバーは Phase 2 で実装予定。設計の全容は
+> **Status: 開発中(プレリリース)。** Phase 1・2 実装済み: RDAP ルックアップ、
+> port 43 WHOIS フォールバック(.jp 等の RDAP 未対応 ccTLD)、IDN punycode
+> 自前変換、`cache` サブコマンド、MCP サーバー。残るは Phase 3(リリース)。
+> 設計の全容は
 > [docs/ja/whois-lookup-rfp.ja.md](docs/ja/whois-lookup-rfp.ja.md) を参照。
 
 ## 使い方
@@ -27,9 +27,9 @@ WHOIS にフォールバックします。**credential ゼロ・外部依存ゼ�
 $ whois-lookup lookup example.com
 $ whois-lookup lookup 93.184.216.34 --json
 $ whois-lookup lookup AS13335
-$ whois-lookup lookup 日本語.jp        # Phase 2 — IDN を自前実装で punycode 変換
-$ whois-lookup cache status            # Phase 2
-$ whois-lookup mcp                     # Phase 2 — ローカル MCP サーバー (stdio)
+$ whois-lookup lookup 日本語.jp        # IDN → punycode 自前変換; .jp → WHOIS フォールバック
+$ whois-lookup cache status
+$ whois-lookup mcp                     # ローカル MCP サーバー (stdio)
 ```
 
 `lookup` の終了コード: `0` 成功、`1` 対象が存在しない(RDAP 404)、`2`
@@ -39,9 +39,11 @@ $ whois-lookup mcp                     # Phase 2 — ローカル MCP サーバ�
 - 3 種のいずれとしても解釈できない入力は**ネットワーク送信前に拒否**
   (プロトコルインジェクションとレート枠浪費を防ぐ安全機構)
 - 結果はローカルにキャッシュ(デフォルト TTL 24 時間)。`--refresh` で無視
-- `--raw` で生 WHOIS テキスト / RDAP レスポンスを同梱
+- `--raw` で生ペイロードを同梱: `raw`(RDAP JSON)または `raw_text`(WHOIS)
 - 出力には `source`(`rdap` | `whois`)を明示。IDN クエリでは punycode 形の
   `query_ascii` を併記
+- MCP サーバーは `lookup` / `cache_status` / `get_usage` を提供。ツール
+  エラーは構造化(`{code, message}`)
 
 **取得できる情報について:** GDPR(2018)以降、registrant の個人情報の大半は
 "REDACTED FOR PRIVACY" で秘匿されています。安定して取得できるのは registrar、
