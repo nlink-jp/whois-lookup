@@ -67,7 +67,8 @@ func Classify(input string, hint Type) (Query, error) {
 	}
 	q, err := classifyDomain(in, false)
 	if err != nil {
-		return Query{}, fmt.Errorf("%w: %q is not an IP address, an AS number, or a valid domain name (%v)", ErrInvalid, in, errors.Unwrap(err))
+		reason := strings.TrimPrefix(err.Error(), ErrInvalid.Error()+": ")
+		return Query{}, fmt.Errorf("%w: %q is not an IP address, an AS number, or a valid domain name (%s)", ErrInvalid, in, reason)
 	}
 	return q, nil
 }
