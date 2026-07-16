@@ -1,0 +1,35 @@
+# whois-lookup configuration (optional).
+# Copy to ~/.config/whois-lookup/config.toml to override defaults.
+# No credentials are needed — RDAP and WHOIS endpoints are public.
+
+[cache]
+# How long a per-query lookup result stays fresh, in hours. WHOIS data
+# changes slowly and registries rate-limit aggressively, so keep this high.
+# The WHOIS_LOOKUP_CACHE_TTL_HOURS environment variable overrides this value.
+# ttl_hours = 24
+
+# Where cached results and bootstrap files are stored (optional).
+# Default: ~/.cache/whois-lookup
+# The WHOIS_LOOKUP_CACHE_DIR environment variable overrides this value.
+# dir = "~/.cache/whois-lookup"
+
+[rdap]
+# Base URL of the IANA RDAP bootstrap registry (dns.json / ipv4.json /
+# ipv6.json / asn.json live under it). Cached with ETag conditional GET.
+# The WHOIS_LOOKUP_BOOTSTRAP_URL environment variable overrides this value.
+# bootstrap_url = "https://data.iana.org/rdap/"
+
+# How often to revalidate the cached bootstrap files, in hours. The files
+# change rarely, so revalidation is a cheap conditional GET.
+# The WHOIS_LOOKUP_BOOTSTRAP_REVALIDATE_HOURS environment variable overrides.
+# revalidate_hours = 24
+
+[whois]
+# Root of the port 43 referral chain, used only for TLDs without RDAP.
+# The WHOIS_LOOKUP_WHOIS_ROOT environment variable overrides this value.
+# root = "whois.iana.org:43"
+
+[network]
+# Network timeout in seconds for RDAP and WHOIS queries.
+# The WHOIS_LOOKUP_TIMEOUT_SECONDS environment variable overrides this value.
+# timeout_seconds = 10
