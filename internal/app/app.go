@@ -5,9 +5,14 @@
 package app
 
 import (
+	"flag"
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/nlink-jp/whois-lookup/internal/config"
+	"github.com/nlink-jp/whois-lookup/internal/engine"
+	"github.com/nlink-jp/whois-lookup/internal/mcp"
 )
 
 // Exit codes. lookup is not a membership test, so unlike tor-exit-lookup's
@@ -89,8 +94,24 @@ func cmdCache(args []string) int {
 	return runCache(args, os.Stdout, os.Stderr)
 }
 
-// cmdMCP will run the stdio MCP server (Phase 2).
-func cmdMCP(_ []string, _ string) int {
-	fmt.Fprintln(os.Stderr, "mcp: not implemented yet (Phase 2)")
-	return exitError
+// cmdMCP runs the stdio MCP server until stdin closes (MCP has no protocol
+// cancel; a closing stdin is the shutdown signal).
+func cmdMCP(args []string, version string) int {
+	fs := flag.NewFlagSet("mcp", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	cfgPath := fs.String("config", "", "config file path")
+	fs.StringVar(cfgPath, "c", "", "config file path (shorthand)")
+	if err := fs.Parse(args); err != nil {
+		return exitError
+	}
+	cfg, err := config.Load(*cfgPath, 0)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		return exitError
+	}
+	if err := mcp.Serve(engine.New(cfg, version), version, os.Stdin, os.Stdout); err != nil {
+		fmt.Fprintf(os.Stderr, "mcp: %v\n", err)
+		return exitError
+	}
+	return exitOK
 }

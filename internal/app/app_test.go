@@ -22,7 +22,7 @@ func TestRunExitCodes(t *testing.T) {
 		{"lookup invalid input", []string{"lookup", "!!!"}, exitError},
 		{"lookup missing arg", []string{"lookup"}, exitError},
 		{"cache without subcommand", []string{"cache"}, exitError},
-		{"mcp stub", []string{"mcp"}, exitError},
+		{"mcp exits cleanly on closed stdin", []string{"mcp"}, exitOK},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
