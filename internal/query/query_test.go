@@ -23,6 +23,9 @@ func TestClassifyAutoDetect(t *testing.T) {
 		{"Example.COM", TypeDomain, "example.com"},
 		{"example.com.", TypeDomain, "example.com"},
 		{"xn--wgv71a119e.jp", TypeDomain, "xn--wgv71a119e.jp"},
+		{"日本語.jp", TypeDomain, "xn--wgv71a119e.jp"}, // IDN converted in-house
+		{"ドメイン名例.JP", TypeDomain, "xn--eckwd4c7cu47r2wf.jp"},
+		{"例え.テスト", TypeDomain, "xn--r8jz45g.xn--zckzah"}, // IDN TLD
 		{"a-b.c-d.org", TypeDomain, "a-b.c-d.org"},
 		{"  example.com  ", TypeDomain, "example.com"}, // surrounding whitespace trimmed
 	}
@@ -63,7 +66,7 @@ func TestClassifyRejects(t *testing.T) {
 		{"all-numeric TLD", "1.2.3.4.5"},
 		{"IPv6 zone", "fe80::1%en0"},
 		{"ASN out of range", "AS4294967296"},
-		{"IDN U-label (Phase 2)", "日本語.jp"},
+		{"mixed punycode and U-label", "xn--日本語.jp"},
 		{"single label without hint", "localhost"},
 		{"label over 63", strings.Repeat("a", 64) + ".com"},
 		{"total over 253", strings.Repeat("abcdefgh.", 30) + "com"},

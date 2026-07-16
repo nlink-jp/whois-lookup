@@ -6,6 +6,8 @@ import (
 	"net/netip"
 	"strconv"
 	"strings"
+
+	"github.com/nlink-jp/whois-lookup/internal/idn"
 )
 
 // Type is the classified kind of a lookup input.
@@ -103,17 +105,19 @@ func classifyASN(in string) (Query, error) {
 // classifyDomain applies the RFC hostname rules (total ≤253 after the
 // optional trailing dot, labels 1–63, LDH, last label not all-numeric). A
 // single-label name (bare TLD) is allowed only when the type was explicitly
-// hinted. Phase 1 accepts A-labels only; non-ASCII input gets a pointer to
-// punycode until the idn package (Phase 2) converts it here.
+// hinted. IDN U-labels are converted to punycode A-labels first, so the LDH
+// validation below always sees the wire form.
 func classifyDomain(in string, hinted bool) (Query, error) {
 	name := strings.ToLower(strings.TrimSuffix(in, "."))
 	if name == "" {
 		return Query{}, fmt.Errorf("%w: empty domain", ErrInvalid)
 	}
-	for _, r := range name {
-		if r > 0x7f {
-			return Query{}, fmt.Errorf("%w: IDN U-labels are not supported yet — pass the punycode (xn--) form", ErrInvalid)
+	if !isASCII(name) {
+		conv, err := idn.ToASCII(name)
+		if err != nil {
+			return Query{}, fmt.Errorf("%w: %v", ErrInvalid, err)
 		}
+		name = conv
 	}
 	if len(name) > 253 {
 		return Query{}, fmt.Errorf("%w: domain exceeds 253 characters", ErrInvalid)
@@ -151,6 +155,15 @@ func checkLabel(l string) error {
 		return fmt.Errorf("%w: label contains %q", ErrInvalid, rune(c))
 	}
 	return nil
+}
+
+func isASCII(s string) bool {
+	for i := 0; i < len(s); i++ {
+		if s[i] > 0x7f {
+			return false
+		}
+	}
+	return true
 }
 
 func allDigits(s string) bool {

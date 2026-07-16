@@ -105,7 +105,7 @@ func TestLookupInvalidInputNeverTouchesNetwork(t *testing.T) {
 	rd := &fakeRDAP{}
 	e := newEngine(t, res1, rd)
 
-	for _, in := range []string{"", "bad domain.com", "example.com\r\nX", "日本語.jp"} {
+	for _, in := range []string{"", "bad domain.com", "example.com\r\nX", "xn--日本語.jp"} {
 		if _, err := e.Lookup(in, Options{}); !errors.Is(err, query.ErrInvalid) {
 			t.Errorf("Lookup(%q) = %v, want ErrInvalid", in, err)
 		}
