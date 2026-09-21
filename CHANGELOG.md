@@ -4,6 +4,30 @@ All notable changes to whois-lookup are documented here.
 
 ## [Unreleased]
 
+### Changed
+
+- **An MCP tool call carrying an argument the tool does not declare now fails
+  instead of being quietly ignored.** This is a deliberate behaviour change,
+  required by org ADR-021 §4. Until now a misspelt argument was dropped and the
+  call ran without it, and `refresh` is the one that matters: misspell it and a
+  record from a cache with a 24-hour TTL comes back presented as freshly
+  fetched — while an expiry date going stale is exactly what a caller passes
+  `refresh` for. Every tool — including `get_usage` and `cache_status`, which
+  take no arguments — now decodes with `DisallowUnknownFields` and refuses the
+  call, naming the offending field:
+  `{"code":"invalid_input","message":"arguments: json: unknown field \"refesh\""}`.
+
+  A malformed argument object is refused for the same reason. The decode error
+  used to be discarded along with the unknown field, so `{"query": 1}` ran as
+  if no target had been named and came back with "provide 'query'", an answer
+  that contradicted the request. It now reports the type mismatch.
+
+  Nothing runs before the arguments decode, so a rejected call reaches neither
+  a registry nor port 43. Omitting `arguments`, or sending `{}` or `null`,
+  still means "no arguments" and is not an error. There is no compatibility
+  shim: an argument name this server does not declare has never meant
+  anything, so the only fix is to correct it.
+
 ### Fixed
 
 - **Every MCP tool input schema is closed.** The schemas omitted

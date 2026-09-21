@@ -44,6 +44,16 @@ files' freshness. No arguments.
 
 Returns this manual. No arguments.
 
+## Arguments are strict
+
+Every tool refuses an argument it does not declare, naming it:
+`arguments: json: unknown field "refesh"`. A wrong-typed argument is refused the
+same way. Nothing runs before the arguments decode, so a rejected call reaches
+neither a registry nor port 43 — fix the name or the type and call again. This
+is the enforcing half of the closed schemas (org ADR-021 §4); a misspelt
+`refresh` used to be dropped, which served a record from a 24-hour cache as a
+freshly fetched one.
+
 ## Errors
 
 Tool errors are structured JSON: `{"code": "...", "message": "..."}`.
@@ -51,6 +61,8 @@ Tool errors are structured JSON: `{"code": "...", "message": "..."}`.
 | code | meaning | recovery |
 |------|---------|----------|
 | `invalid_input` | The query is valid as none of IP / ASN / domain. Nothing was sent to the network. | Fix the query. Pass `type` if auto-detection picked wrongly. |
+| `invalid_input` + `arguments: json: unknown field "…"` | An argument name this tool does not declare — usually a typo. Nothing was sent to the network. | Fix the spelling and call again; the named field is the offending one. |
+| `invalid_input` + `arguments: json: cannot unmarshal …` | An argument of the wrong JSON type (`query`/`type` are strings, `raw`/`refresh` booleans). | Check the argument's type in the tool list above and call again. |
 | `not_found` | The registry answered authoritatively that the object does not exist (RDAP 404 / WHOIS no match). | Not an outage — the object is unregistered. |
 | `no_rdap_service` | No RDAP endpoint exists for this IP/ASN registry. | Rare; usually indicates a bootstrap problem. Retry with `refresh: true`. |
 | `network_error` | A registry or IANA was unreachable, or answered abnormally. | Retry later; registries rate-limit aggressively, so avoid rapid retries — the cache exists for a reason. |

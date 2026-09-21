@@ -59,6 +59,12 @@ $ whois-lookup mcp                     # local MCP server (stdio)
   punycoded `query_ascii` form.
 - The MCP server exposes `lookup`, `cache_status`, and `get_usage`; tool
   errors are structured (`{code, message}`).
+- **MCP arguments are checked strictly:** a call carrying an argument a tool
+  does not declare fails with `invalid_input`, naming it (`arguments: json:
+  unknown field "refesh"`), rather than running without it. A misspelt
+  `refresh` used to be dropped, serving a record from the 24h cache as a
+  freshly fetched one. Wrong-typed arguments are refused the same way, and
+  nothing reaches a registry before the arguments decode.
 
 **What you can expect back:** since GDPR (2018), most registrant personal
 data is redacted ("REDACTED FOR PRIVACY"). The reliably available fields are

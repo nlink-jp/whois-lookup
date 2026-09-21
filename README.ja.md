@@ -58,6 +58,11 @@ $ whois-lookup mcp                     # ローカル MCP サーバー (stdio)
   `query_ascii` を併記
 - MCP サーバーは `lookup` / `cache_status` / `get_usage` を提供。ツール
   エラーは構造化(`{code, message}`)
+- **MCP の引数は厳格に検査されます:** ツールが宣言していない引数を含む呼び出しは
+  `invalid_input` で失敗し、その名前を挙げます(`arguments: json: unknown field
+  "refesh"`)。従来は無視して実行していたため、`refresh` の綴り間違いは 24 時間
+  キャッシュの結果を「新規取得した結果」として返していました。型が違う引数も
+  同様に拒否され、引数のデコードより前にレジストリへは一切アクセスしません
 
 **取得できる情報について:** GDPR(2018)以降、registrant の個人情報の大半は
 "REDACTED FOR PRIVACY" で秘匿されています。安定して取得できるのは registrar、
