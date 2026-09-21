@@ -85,6 +85,14 @@ internal/mcp/           Zero-dep stdio JSON-RPC 2.0 server + tools.             
   caller reads. The pattern list lives in `whois.isNoMatch`.
 - **usage.md is pinned** by `usage_test.go`: adding/renaming a tool, result
   field, or error code means updating the manual, or the test fails.
+- **Tool schemas are closed; the decoder is not.** Every `inputSchema` is built
+  by `obj()` in `internal/mcp/tools.go`, which sets `additionalProperties: false`
+  (org ADR-021 §10), and `TestEveryToolSchemaIsValidAndClosed` fails if a tool
+  escapes it — so build a new schema with `obj()`, not a map literal. That flag
+  is only the *declared* half: argument decoding still uses a plain
+  `json.Unmarshal`, so an unknown argument from a client that does not validate
+  the schema is silently ignored rather than refused. ADR-021 pairs the flag with
+  `json.Decoder.DisallowUnknownFields`; that half is not implemented here.
 
 ## Data sources
 

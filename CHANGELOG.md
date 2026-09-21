@@ -2,6 +2,20 @@
 
 All notable changes to whois-lookup are documented here.
 
+## [Unreleased]
+
+### Fixed
+
+- **Every MCP tool input schema is closed.** The schemas omitted
+  `additionalProperties: false`, so a mistyped argument read as a legitimate one
+  to any client that validates against them. Schemas are now built through a
+  single `obj()` helper that sets the flag, and an arch test fails if a tool's
+  schema omits it — org ADR-021 §10 requires the test as well as the flag,
+  because a rule stated only in prose is re-decided by whoever adds the next
+  tool. The server's own argument decoding is unchanged and still lenient: it
+  does not use `DisallowUnknownFields`, so an unknown argument that reaches it
+  is ignored rather than refused.
+
 ## [0.1.0] - 2026-07-16
 
 Initial release.

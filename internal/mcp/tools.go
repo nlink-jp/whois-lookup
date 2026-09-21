@@ -28,6 +28,17 @@ const Instructions = "whois-lookup returns the registration data (registrar, dat
 	"Tool errors are structured JSON ({code, message}); code \"not_found\" means the object does not exist. " +
 	"Call get_usage for the full tool reference and error-recovery table."
 
+// obj builds a tool's input schema. Every schema goes through here so that
+// org ADR-021 §10's `additionalProperties: false` is set once instead of being
+// remembered per tool — the next tool added gets the closed schema for free.
+func obj(props map[string]any, required ...string) map[string]any {
+	s := map[string]any{"type": "object", "properties": props, "additionalProperties": false}
+	if len(required) > 0 {
+		s["required"] = required
+	}
+	return s
+}
+
 // toolsList returns the advertised tool set with JSON Schema for each input.
 func toolsList() any {
 	return map[string]any{
@@ -35,26 +46,22 @@ func toolsList() any {
 			{
 				"name":        "get_usage",
 				"description": "Return this server's operating manual (markdown): the tools, the result schema, and the error-recovery table. Call it once before first use.",
-				"inputSchema": map[string]any{"type": "object", "properties": map[string]any{}},
+				"inputSchema": obj(map[string]any{}),
 			},
 			{
 				"name":        "lookup",
 				"description": "Look up the registration data of a domain, IP address, or AS number (registrar, created/updated/expires, nameservers, status, abuse contact). RDAP-first with port 43 WHOIS fallback for RDAP-less ccTLDs such as .jp; IDN input is converted to punycode automatically. Results are cached locally (default 24h).",
-				"inputSchema": map[string]any{
-					"type":     "object",
-					"required": []string{"query"},
-					"properties": map[string]any{
-						"query":   map[string]any{"type": "string", "description": "IP address, domain name (IDN ok), or AS number (e.g. AS13335)."},
-						"type":    map[string]any{"type": "string", "enum": []string{"ip", "domain", "asn"}, "description": "Override input-type auto-detection."},
-						"raw":     map[string]any{"type": "boolean", "description": "Include the raw RDAP response (raw) or WHOIS text (raw_text)."},
-						"refresh": map[string]any{"type": "boolean", "description": "Bypass the local cache and re-fetch."},
-					},
-				},
+				"inputSchema": obj(map[string]any{
+					"query":   map[string]any{"type": "string", "description": "IP address, domain name (IDN ok), or AS number (e.g. AS13335)."},
+					"type":    map[string]any{"type": "string", "enum": []string{"ip", "domain", "asn"}, "description": "Override input-type auto-detection."},
+					"raw":     map[string]any{"type": "boolean", "description": "Include the raw RDAP response (raw) or WHOIS text (raw_text)."},
+					"refresh": map[string]any{"type": "boolean", "description": "Bypass the local cache and re-fetch."},
+				}, "query"),
 			},
 			{
 				"name":        "cache_status",
 				"description": "Report the local cache state: query-entry count, TTL, and the IANA bootstrap files' freshness.",
-				"inputSchema": map[string]any{"type": "object", "properties": map[string]any{}},
+				"inputSchema": obj(map[string]any{}),
 			},
 		},
 	}
