@@ -109,9 +109,12 @@ func writeAtomic(path string, b []byte) error {
 	if err != nil {
 		return err
 	}
-	defer os.Remove(tmp.Name())
+	// No-op after a successful rename; on the failure paths the temp file is
+	// already unusable, so a failed unlink changes nothing.
+	defer func() { _ = os.Remove(tmp.Name()) }()
 	if _, err := tmp.Write(b); err != nil {
-		tmp.Close()
+		// The write error is what the caller needs; the Close is cleanup.
+		_ = tmp.Close()
 		return err
 	}
 	if err := tmp.Close(); err != nil {

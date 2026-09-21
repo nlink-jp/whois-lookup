@@ -12,9 +12,19 @@ All notable changes to whois-lookup are documented here.
   single `obj()` helper that sets the flag, and an arch test fails if a tool's
   schema omits it — org ADR-021 §10 requires the test as well as the flag,
   because a rule stated only in prose is re-decided by whoever adds the next
-  tool. The server's own argument decoding is unchanged and still lenient: it
-  does not use `DisallowUnknownFields`, so an unknown argument that reaches it
-  is ignored rather than refused.
+  tool.
+
+- `make check` is green again: `make lint` failed on 21 errcheck findings.
+  Nine were `fmt.Fprint*` writes to the CLI's own stdout/stderr, now excluded
+  in a new `.golangci.yml` with the reasoning recorded there — reporting a
+  failed write to the stream that just failed is circular, and the exit code
+  already carries the outcome. The other twelve were deliberate discards
+  (reading a config file, closing response bodies and a WHOIS socket already
+  read to EOF, the post-rename temp-file unlink, and test fixture servers whose
+  failures surface as the client-side assertion) and are now written `_ =` with
+  the reason beside each. None was a real unchecked error: the one write path
+  that matters, `cache.writeAtomic`, already checks its temp file's `Close`
+  before renaming.
 
 ## [0.1.0] - 2026-07-16
 

@@ -85,7 +85,8 @@ func (c *Client) Lookup(base string, q query.Query) (*Result, json.RawMessage, e
 	if err != nil {
 		return nil, nil, fmt.Errorf("rdap query %s: %w", base+path, err)
 	}
-	defer resp.Body.Close()
+	// Read-only response body: a failed Close carries no outcome to report.
+	defer func() { _ = resp.Body.Close() }()
 
 	switch {
 	case resp.StatusCode == http.StatusNotFound:

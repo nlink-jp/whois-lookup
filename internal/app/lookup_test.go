@@ -44,7 +44,7 @@ func newStack(t *testing.T) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { ln.Close() })
+	t.Cleanup(func() { _ = ln.Close() })
 	go func() {
 		for {
 			conn, err := ln.Accept()
@@ -52,9 +52,11 @@ func newStack(t *testing.T) string {
 				return
 			}
 			go func(conn net.Conn) {
-				defer conn.Close()
+				defer func() { _ = conn.Close() }()
 				buf := make([]byte, 256)
-				conn.Read(buf)
+				// Fixture server: the client's own assertion is what proves the
+				// exchange worked.
+				_, _ = conn.Read(buf)
 				fmt.Fprint(conn, "[登録年月日] 2001/05/30\n[状態] Active\nregistrar: JP Registrar\n")
 			}(conn)
 		}

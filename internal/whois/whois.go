@@ -85,7 +85,9 @@ func (c *Client) exchange(addr, q string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("whois %s: %w", addr, err)
 	}
-	defer conn.Close()
+	// The write below is checked and the response is read to EOF, so this
+	// Close is cleanup with nothing left to report.
+	defer func() { _ = conn.Close() }()
 	if c.Timeout > 0 {
 		_ = conn.SetDeadline(time.Now().Add(c.Timeout))
 	}

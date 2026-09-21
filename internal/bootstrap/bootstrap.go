@@ -131,7 +131,8 @@ func (r *Resolver) fetch(name, path, metaPath string, m *meta, now time.Time) er
 	if err != nil {
 		return fmt.Errorf("fetch bootstrap %s: %w", name, err)
 	}
-	defer resp.Body.Close()
+	// Read-only response body: a failed Close carries no outcome to report.
+	defer func() { _ = resp.Body.Close() }()
 
 	switch resp.StatusCode {
 	case http.StatusNotModified:

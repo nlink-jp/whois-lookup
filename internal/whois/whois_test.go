@@ -19,7 +19,7 @@ func serve(t *testing.T, respond func(q string) string) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { ln.Close() })
+	t.Cleanup(func() { _ = ln.Close() })
 	go func() {
 		for {
 			conn, err := ln.Accept()
@@ -27,11 +27,13 @@ func serve(t *testing.T, respond func(q string) string) string {
 				return
 			}
 			go func(conn net.Conn) {
-				defer conn.Close()
+				defer func() { _ = conn.Close() }()
 				buf := make([]byte, 1024)
 				n, _ := conn.Read(buf)
 				q := strings.TrimRight(string(buf[:n]), "\r\n")
-				io.WriteString(conn, respond(q))
+				// Fixture server: the client's own assertion is what proves the
+				// exchange worked.
+				_, _ = io.WriteString(conn, respond(q))
 			}(conn)
 		}
 	}()
