@@ -27,7 +27,7 @@ brew install nlink-jp/tap/whois-lookup
 から linux/amd64, linux/arm64, darwin/arm64, windows/amd64 のビルド済み
 バイナリを取得してください。
 
-ソースからビルドする場合(Go 1.25+):
+ソースからビルドする場合(Go 1.27.4+):
 
 ```sh
 git clone https://github.com/nlink-jp/whois-lookup
@@ -76,7 +76,7 @@ make build   # → dist/whois-lookup   (`go build` 直接実行は禁止)
 make test    # go test -race -cover ./...
 ```
 
-Go 1.25+。外部依存なし。
+Go 1.27.4+。外部依存なし。
 
 ## 設定
 

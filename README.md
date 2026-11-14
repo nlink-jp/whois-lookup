@@ -28,7 +28,7 @@ Or grab a prebuilt binary for linux/amd64, linux/arm64, darwin/arm64, or
 windows/amd64 from the
 [releases page](https://github.com/nlink-jp/whois-lookup/releases).
 
-To build from source (Go 1.25+):
+To build from source (Go 1.27.4+):
 
 ```sh
 git clone https://github.com/nlink-jp/whois-lookup
@@ -78,7 +78,7 @@ make build   # → dist/whois-lookup   (never `go build` directly)
 make test    # go test -race -cover ./...
 ```
 
-Go 1.25+. No external dependencies.
+Go 1.27.4+. No external dependencies.
 
 ## Configuration
 
