@@ -1,6 +1,6 @@
 // Package idn converts IDN U-labels (e.g. Japanese domains) to punycode
-// A-labels via an in-house RFC 3492 encoder (Phase 2) — no x/net/idna,
-// keeping the zero-dependency policy. Simplified IDNA: lowercasing only;
+// A-labels via an in-house RFC 3492 encoder (Phase 2) — no x/net/idna, keeping
+// to the rule of no third-party dependency. Simplified IDNA: lowercasing only;
 // UTS #46 mapping, bidi, and contextual rules are out of scope, and input is
 // assumed NFC-normalized. Cache keys and wire queries always use the A-label
 // form.

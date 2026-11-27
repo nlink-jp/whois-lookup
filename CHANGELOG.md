@@ -29,7 +29,9 @@ All notable changes to whois-lookup are documented here.
   - `notifications/cancelled` now cancels the call.
     A cancelled `lookup` still runs to its end — the engine takes no context —
     and its answer is dropped; the cache is written whole to a temporary file
-    and renamed, so nothing partial is left.
+    and renamed, so no entry is ever partial; a temp file left by a process
+    ended part-way (a SIGTERM past the shutdown grace) is removed by `cache
+    clear`.
 
   Requests piped in are still all answered before the server exits at end of
   input.
@@ -40,6 +42,7 @@ All notable changes to whois-lookup are documented here.
 
 - An argument spelt in another case (`{"Query": ...}`) was accepted as the declared one; it is now refused by name.
 - SIGINT or SIGTERM ended the MCP server by killing the process; a signal now ends it through its context, so its cleanup runs.
+- `cache clear` left behind the temp file a write leaves when the process ends part-way (a SIGTERM past the shutdown grace, a crash); it now removes it too.
 
 ## [0.2.2] - 2026-11-27
 
