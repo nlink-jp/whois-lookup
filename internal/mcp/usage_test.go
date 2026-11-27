@@ -41,7 +41,7 @@ func TestUsagePinned(t *testing.T) {
 // (DisallowUnknownFields), which refuses an unknown argument that arrives
 // anyway; TestUnknownArgumentIsRefusedByName covers it.
 func TestEveryToolSchemaIsValidAndClosed(t *testing.T) {
-	b, err := json.Marshal(toolsList())
+	b, err := json.Marshal(map[string]any{"tools": toolsList()})
 	if err != nil {
 		t.Fatalf("marshal tool list: %v", err)
 	}

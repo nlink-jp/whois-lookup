@@ -2,6 +2,7 @@ package mcp
 
 import (
 	"bytes"
+	"context"
 	_ "embed"
 	"encoding/json"
 	"errors"
@@ -20,9 +21,9 @@ import (
 //go:embed usage.md
 var usageMarkdown string
 
-// Instructions is the initialize-time hint (surfaced via the MCP
-// `instructions` field) that makes get_usage discoverable and steers clients
-// away from common errors.
+// Instructions is the hint a client receives when it opens the server (the
+// MCP `instructions` field, in initialize or server/discover) that makes
+// get_usage discoverable and steers clients away from common errors.
 const Instructions = "whois-lookup returns the registration data (registrar, dates, nameservers, abuse contact) " +
 	"of a domain, IP address, or AS number — RDAP-first with a port 43 WHOIS fallback, no credentials. " +
 	"Call the lookup tool with a single query; the input type is auto-detected and results are cached locally. " +
@@ -68,58 +69,52 @@ func decodeArgs(raw json.RawMessage, into any) error {
 	return nil
 }
 
+
 // toolsList returns the advertised tool set with JSON Schema for each input.
-func toolsList() any {
-	return map[string]any{
-		"tools": []map[string]any{
-			{
-				"name":        "get_usage",
-				"description": "Return this server's operating manual (markdown): the tools, the result schema, and the error-recovery table. Call it once before first use.",
-				"inputSchema": obj(map[string]any{}),
-			},
-			{
-				"name":        "lookup",
-				"description": "Look up the registration data of a domain, IP address, or AS number (registrar, created/updated/expires, nameservers, status, abuse contact). RDAP-first with port 43 WHOIS fallback for RDAP-less ccTLDs such as .jp; IDN input is converted to punycode automatically. Results are cached locally (default 24h).",
-				"inputSchema": obj(map[string]any{
-					"query":   map[string]any{"type": "string", "description": "IP address, domain name (IDN ok), or AS number (e.g. AS13335)."},
-					"type":    map[string]any{"type": "string", "enum": []string{"ip", "domain", "asn"}, "description": "Override input-type auto-detection."},
-					"raw":     map[string]any{"type": "boolean", "description": "Include the raw RDAP response (raw) or WHOIS text (raw_text)."},
-					"refresh": map[string]any{"type": "boolean", "description": "Bypass the local cache and re-fetch."},
-				}, "query"),
-			},
-			{
-				"name":        "cache_status",
-				"description": "Report the local cache state: query-entry count, TTL, and the IANA bootstrap files' freshness.",
-				"inputSchema": obj(map[string]any{}),
-			},
+func toolsList() []map[string]any {
+	return []map[string]any{
+		{
+			"name":        "get_usage",
+			"description": "Return this server's operating manual (markdown): the tools, the result schema, and the error-recovery table. Call it once before first use.",
+			"inputSchema": obj(map[string]any{}),
+		},
+		{
+			"name":        "lookup",
+			"description": "Look up the registration data of a domain, IP address, or AS number (registrar, created/updated/expires, nameservers, status, abuse contact). RDAP-first with port 43 WHOIS fallback for RDAP-less ccTLDs such as .jp; IDN input is converted to punycode automatically. Results are cached locally (default 24h).",
+			"inputSchema": obj(map[string]any{
+				"query":   map[string]any{"type": "string", "description": "IP address, domain name (IDN ok), or AS number (e.g. AS13335)."},
+				"type":    map[string]any{"type": "string", "enum": []string{"ip", "domain", "asn"}, "description": "Override input-type auto-detection."},
+				"raw":     map[string]any{"type": "boolean", "description": "Include the raw RDAP response (raw) or WHOIS text (raw_text)."},
+				"refresh": map[string]any{"type": "boolean", "description": "Bypass the local cache and re-fetch."},
+			}, "query"),
+		},
+		{
+			"name":        "cache_status",
+			"description": "Report the local cache state: query-entry count, TTL, and the IANA bootstrap files' freshness.",
+			"inputSchema": obj(map[string]any{}),
 		},
 	}
 }
 
-func (s *server) toolsCall(params json.RawMessage) (toolResult, *rpcError) {
-	var p struct {
-		Name      string          `json:"name"`
-		Arguments json.RawMessage `json:"arguments"`
-	}
-	if err := json.Unmarshal(params, &p); err != nil {
-		return toolResult{}, &rpcError{Code: -32602, Message: "invalid params: " + err.Error()}
-	}
-	switch p.Name {
+// toolsCall dispatches one call by tool name and builds its result.
+func (s *server) toolsCall(ctx context.Context, name string, args json.RawMessage) toolResult {
+	switch name {
 	case "get_usage":
 		// No arguments — which still means "none", not "any".
-		if err := decodeArgs(p.Arguments, &struct{}{}); err != nil {
-			return errorResult("invalid_input", err.Error()), nil
+		if err := decodeArgs(args, &struct{}{}); err != nil {
+			return errorResult("invalid_input", err.Error())
 		}
-		return textResult(false, usageMarkdown), nil
+		return textResult(false, usageMarkdown)
 	case "lookup":
-		return s.toolLookup(p.Arguments), nil
+		return s.toolLookup(args)
 	case "cache_status":
-		if err := decodeArgs(p.Arguments, &struct{}{}); err != nil {
-			return errorResult("invalid_input", err.Error()), nil
+		if err := decodeArgs(args, &struct{}{}); err != nil {
+			return errorResult("invalid_input", err.Error())
 		}
-		return s.toolCacheStatus(), nil
+		return s.toolCacheStatus()
 	default:
-		return toolResult{}, &rpcError{Code: -32602, Message: "unknown tool: " + p.Name}
+		// Not reached: the protocol layer refuses a tool it did not register.
+		return textResult(true, "unknown tool: "+name)
 	}
 }
 

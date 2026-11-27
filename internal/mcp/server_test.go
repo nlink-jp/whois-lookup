@@ -1,9 +1,10 @@
 package mcp
 
 import (
-	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"strings"
 	"testing"
 	"time"
@@ -46,12 +47,12 @@ func testEngine(t *testing.T) *engine.Engine {
 // responses.
 func drive(t *testing.T, input string) []response {
 	t.Helper()
-	var out bytes.Buffer
-	if err := Serve(testEngine(t), "test", strings.NewReader(input), &out); err != nil {
-		t.Fatal(err)
-	}
+	e := testEngine(t)
+	out := serveOverClient(t, func(ctx context.Context, in io.Reader, w io.Writer) error {
+		return Serve(ctx, e, "test", in, w)
+	}, input)
 	var resps []response
-	dec := json.NewDecoder(&out)
+	dec := json.NewDecoder(out)
 	for dec.More() {
 		var r response
 		if err := dec.Decode(&r); err != nil {
@@ -87,17 +88,15 @@ func TestServeProtocolAndTools(t *testing.T) {
 {"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"lookup","arguments":{"query":"gone.example"}}}
 {"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"cache_status"}}
 {"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"get_usage"}}
-{"jsonrpc":"2.0","id":8,"method":"nope"}
 `
 	resps := drive(t, input)
-	if len(resps) != 8 {
+	if len(resps) != 7 {
 		t.Fatalf("responses = %d (notification must be skipped)", len(resps))
 	}
 
-	// initialize answers with the requested revision the server supports and
-	// carries instructions.
+	// initialize names the server and carries instructions.
 	init, _ := json.Marshal(resps[0].Result)
-	if !strings.Contains(string(init), "2025-06-18") || !strings.Contains(string(init), "whois-lookup") {
+	if !strings.Contains(string(init), "whois-lookup") || !strings.Contains(string(init), "instructions") {
 		t.Errorf("initialize = %s", init)
 	}
 
@@ -138,39 +137,13 @@ func TestServeProtocolAndTools(t *testing.T) {
 	if !strings.Contains(text, "operating manual") {
 		t.Errorf("get_usage = %s", text)
 	}
-
-	// Unknown method → JSON-RPC error, not a tool error.
-	if resps[7].Error == nil || resps[7].Error.Code != -32601 {
-		t.Errorf("unknown method = %+v", resps[7])
-	}
 }
 
-func TestServeMalformedJSONStops(t *testing.T) {
-	resps := drive(t, `{"jsonrpc":"2.0","id":1,"method":"ping"}
-{not json`)
-	if len(resps) != 2 || resps[1].Error == nil || resps[1].Error.Code != -32700 {
-		t.Fatalf("resps = %+v", resps)
-	}
-}
-
-func TestInitializeNegotiatesProtocolVersion(t *testing.T) {
-	cases := []struct{ params, want string }{
-		{`{"protocolVersion":"2025-11-25"}`, "2025-11-25"},
-		{`{"protocolVersion":"2025-06-18"}`, "2025-06-18"},
-		{`{"protocolVersion":"2024-11-05"}`, "2024-11-05"},
-		// 2025-03-26 requires accepting JSON-RPC batches, which this server does not.
-		{`{"protocolVersion":"2025-03-26"}`, "2025-11-25"},
-		// A revision the server does not satisfy must not be echoed back.
-		{`{"protocolVersion":"2026-07-28"}`, "2025-11-25"},
-		{`{"protocolVersion":""}`, "2025-11-25"},
-		{`{}`, "2025-11-25"},
-		{`not json`, "2025-11-25"},
-		{``, "2025-11-25"},
-	}
-	for _, c := range cases {
-		res := (&server{}).initializeResult(json.RawMessage(c.params)).(map[string]any)
-		if got := res["protocolVersion"]; got != c.want {
-			t.Errorf("initialize %s: protocolVersion = %v, want %s", c.params, got, c.want)
-		}
-	}
+// ADR-030 §7: the server against the three probe clients (legacy only,
+// dual-era, modern only).
+func TestAgainstTheProbeClients(t *testing.T) {
+	e := testEngine(t)
+	probeMatrix(t, func(ctx context.Context, in io.Reader, w io.Writer) error {
+		return Serve(ctx, e, "test", in, w)
+	})
 }
