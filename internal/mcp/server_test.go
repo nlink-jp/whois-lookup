@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nlink-jp/mcp/client"
 	"github.com/nlink-jp/whois-lookup/internal/cache"
 	"github.com/nlink-jp/whois-lookup/internal/config"
 	"github.com/nlink-jp/whois-lookup/internal/engine"
@@ -81,7 +82,6 @@ func toolText(t *testing.T, r response) (string, bool) {
 
 func TestServeProtocolAndTools(t *testing.T) {
 	input := `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18"}}
-{"jsonrpc":"2.0","method":"notifications/initialized"}
 {"jsonrpc":"2.0","id":2,"method":"tools/list"}
 {"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"lookup","arguments":{"query":"example.com"}}}
 {"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"lookup","arguments":{"query":"!!!"}}}
@@ -91,7 +91,7 @@ func TestServeProtocolAndTools(t *testing.T) {
 `
 	resps := drive(t, input)
 	if len(resps) != 7 {
-		t.Fatalf("responses = %d (notification must be skipped)", len(resps))
+		t.Fatalf("responses = %d, want 7", len(resps))
 	}
 
 	// initialize names the server and carries instructions.
@@ -146,4 +146,16 @@ func TestAgainstTheProbeClients(t *testing.T) {
 	probeMatrix(t, func(ctx context.Context, in io.Reader, w io.Writer) error {
 		return Serve(ctx, e, "test", in, w)
 	})
+}
+
+// The client that opens the server receives the instructions — the hint that
+// points it at get_usage — whichever era it opens in.
+func TestOpeningCarriesTheInstructions(t *testing.T) {
+	e := testEngine(t)
+	cl := openWith(t, func(ctx context.Context, in io.Reader, w io.Writer) error {
+		return Serve(ctx, e, "test", in, w)
+	}, client.Options{})
+	if got := cl.Instructions(); got != Instructions {
+		t.Errorf("instructions = %q, want the package's Instructions", got)
+	}
 }
