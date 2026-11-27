@@ -8,7 +8,7 @@ CLI + local MCP server that reports the **registration data** of a domain,
 IP address, or AS number: registrar, creation/update/expiry dates,
 nameservers, and abuse contact. **RDAP-first** (IANA bootstrap → structured
 JSON over HTTPS) with a **port 43 WHOIS fallback** only for ccTLDs without
-RDAP (including .jp). Zero credentials, zero external dependencies. The
+RDAP (including .jp). Zero credentials, no third-party dependencies. The
 registration-focused sibling of `asn-lookup` (attribution, offline),
 `abuse-lookup` (reputation), and `tor-exit-lookup` (Tor exit membership).
 
@@ -33,12 +33,13 @@ internal/cache/         Per-query TTL cache (default 24h), atomic writes (Phase 
 internal/config/        Sectioned-TOML subset + WHOIS_LOOKUP_* env/flag resolution (Phase 1)
 internal/engine/        validate → cache → bootstrap → rdap → whois fallback → normalize (Phase 1)
 internal/app/           Dispatch + lookup/cache/mcp; --type/--json/--raw/--refresh
-internal/mcp/           Zero-dep stdio JSON-RPC 2.0 server (lookup/cache_status/get_usage) (Phase 2)
+internal/mcp/           MCP tools on nlink-jp/mcp's server.ToolServer (both eras; ADR-0001) (lookup/cache_status/get_usage)
 ```
 
 Core logic takes injected dependencies (the HTTP client and the port 43
-dialer are interfaces, mocked in tests). **No external dependencies —
-standard library only.**
+dialer are interfaces, mocked in tests). **No third-party dependencies** — the standard library, plus nlink-jp
+modules written on the same rule (`github.com/nlink-jp/mcp` for the MCP
+protocol, organization ADR-030; ADR-0001).
 
 ## Key conventions
 

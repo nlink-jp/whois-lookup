@@ -6,9 +6,10 @@ from the command line or as a local MCP server.
 
 **RDAP-first**: queries go to the official RDAP endpoints (structured JSON,
 resolved via the IANA bootstrap registry), falling back to raw port 43 WHOIS
-only for ccTLDs without RDAP. **Zero credentials, zero external
+only for ccTLDs without RDAP. **Zero credentials, no third-party
 dependencies** — every data source is a public endpoint, and the binary is
-standard library only.
+the standard library plus the organization's module
+[nlink-jp/mcp](https://github.com/nlink-jp/mcp) for the MCP protocol.
 
 The registration-focused sibling of
 [asn-lookup](https://github.com/nlink-jp/asn-lookup) (attribution, offline),
@@ -47,6 +48,11 @@ $ whois-lookup cache status
 $ whois-lookup mcp                     # local MCP server (stdio)
 ```
 
+The MCP server speaks both eras of the protocol: the 2026-07-28 revision
+(clients that probe with `server/discover`) and the earlier `initialize`
+handshake (2025-11-25, 2025-06-18, 2024-11-05). Requests piped in are all
+answered before it exits at end of input.
+
 `lookup` exit codes: `0` success, `1` the object does not exist (RDAP 404),
 `2` error (invalid input, network failure).
 
@@ -78,7 +84,8 @@ make build   # → dist/whois-lookup   (never `go build` directly)
 make test    # go test -race -cover ./...
 ```
 
-Go 1.27.4+. No external dependencies.
+Go 1.27.4+. No third-party dependencies (nlink-jp/mcp is the organization's own
+module, written on the same rule).
 
 ## Configuration
 

@@ -6,8 +6,9 @@
 
 **RDAP ファースト**: クエリは公式 RDAP エンドポイント(構造化 JSON、IANA
 bootstrap レジストリで解決)へ送り、RDAP 未対応の ccTLD のみ生の port 43
-WHOIS にフォールバックします。**credential ゼロ・外部依存ゼロ** — すべての
-データソースは公開エンドポイントで、バイナリは標準ライブラリのみです。
+WHOIS にフォールバックします。**credential ゼロ・サードパーティ製の依存なし** — すべての
+データソースは公開エンドポイントで、バイナリは標準ライブラリと、MCP のプロトコルを担う組織の共通モジュール
+[nlink-jp/mcp](https://github.com/nlink-jp/mcp) だけでできています。
 
 [asn-lookup](https://github.com/nlink-jp/asn-lookup)(帰属、オフライン)、
 [abuse-lookup](https://github.com/nlink-jp/abuse-lookup)(評判)、
@@ -46,6 +47,10 @@ $ whois-lookup cache status
 $ whois-lookup mcp                     # ローカル MCP サーバー (stdio)
 ```
 
+MCP サーバーは、プロトコルの新旧両方の時代を話します。2026-07-28 版（`server/discover` で探るクライアント）と、
+それより前の `initialize` の握手（2025-11-25・2025-06-18・2024-11-05）です。パイプで流し込んだ要求には、
+入力の終わりで終了する前にすべて答えます。
+
 `lookup` の終了コード: `0` 成功、`1` 対象が存在しない(RDAP 404)、`2`
 エラー(不正入力・ネットワーク障害)。
 
@@ -76,7 +81,7 @@ make build   # → dist/whois-lookup   (`go build` 直接実行は禁止)
 make test    # go test -race -cover ./...
 ```
 
-Go 1.27.4+。外部依存なし。
+Go 1.27.4+。サードパーティ製の依存なし（nlink-jp/mcp は、同じ規則で書かれた組織のモジュール）。
 
 ## 設定
 

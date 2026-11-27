@@ -7,8 +7,8 @@ a domain, IP address, or AS number: registrar, creation/update/expiry dates,
 nameservers, abuse contact. **RDAP-first**: endpoints are resolved via the
 IANA bootstrap registry (`https://data.iana.org/rdap/`, ETag-cached) and
 queried over HTTPS for structured JSON; ccTLDs without RDAP (including .jp)
-fall back to raw port 43 WHOIS with referral chasing. Zero credentials, zero
-external dependencies. The registration-focused sibling of `asn-lookup`
+fall back to raw port 43 WHOIS with referral chasing. Zero credentials, no
+third-party dependencies. The registration-focused sibling of `asn-lookup`
 (attribution), `abuse-lookup` (reputation), and `tor-exit-lookup` (Tor exit
 membership).
 
@@ -23,7 +23,9 @@ make vuln            # govulncheck over the build; `make package` runs it first 
 make verify-release  # gate: notarized, fresh, runs at this version, clean linux archives (run before upload)
 ```
 
-Go 1.27.4+. **No external dependencies** — standard library only.
+Go 1.27.4+. **No third-party dependencies** — the standard library, plus nlink-jp
+modules written on the same rule (`github.com/nlink-jp/mcp` for the MCP
+protocol, organization ADR-030; ADR-0001).
 
 ## Layout
 
@@ -38,7 +40,7 @@ internal/cache/         Per-query TTL cache (24h default), atomic writes.       
 internal/config/        Sectioned-TOML subset + WHOIS_LOOKUP_* env/flags.       (Phase 1)
 internal/engine/        validate → cache → bootstrap → rdap → whois → normalize.(Phase 1)
 internal/app/           CLI dispatch; lookup/cache/mcp; --type/--json/--raw.
-internal/mcp/           Zero-dep stdio JSON-RPC 2.0 server + tools.             (Phase 2)
+internal/mcp/           MCP tools on nlink-jp/mcp's server.ToolServer (both eras; ADR-0001)             (Phase 2)
 ```
 
 ## Key design decisions
@@ -65,6 +67,15 @@ internal/mcp/           Zero-dep stdio JSON-RPC 2.0 server + tools.             
   registrant personal data (GDPR redaction since 2018).
 
 ## Gotchas
+
+- **The MCP protocol is nlink-jp/mcp's** (ADR-0001, organization ADR-030 §6).
+  `internal/mcp` never handles `initialize` or `server/discover` itself: `Serve`
+  registers `toolsList()` on a `server.ToolServer` and each handler calls
+  `toolsCall`. Tests replay their requests through the module's `client`
+  (`clienttest_test.go`) and run its three probe clients; do not write the
+  handshake by hand in a test. Before initialize, `tools/*` is -32602 — the
+  module's rule, not a defect. Argument names are matched exactly
+  (`decodeArgs`, `argNames`).
 
 - **Exit-code contract (lookup):** `0` success / `1` object not found (RDAP
   404, WHOIS "no match") / `2` error. Not grep-style — a not-found is a
