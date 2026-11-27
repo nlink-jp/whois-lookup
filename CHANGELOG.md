@@ -4,6 +4,8 @@ All notable changes to whois-lookup are documented here.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-28
+
 ### Added
 
 - **The MCP server speaks both eras of the protocol** (ADR-0001): the
