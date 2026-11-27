@@ -75,7 +75,6 @@ func TestMalformedArgumentsAreRefused(t *testing.T) {
 		args string
 	}{
 		{"number for string", `{"query":1}`},
-		{"array for object", `["example.com"]`},
 		{"string for boolean", `{"query":"example.com","raw":"yes"}`},
 		{"object for string", `{"query":{"name":"example.com"}}`},
 	}
@@ -106,5 +105,25 @@ func TestOmittedArgumentsStillMeanNone(t *testing.T) {
 		if isErr {
 			t.Errorf("cache_status with arguments %q was refused: %s", args, text)
 		}
+	}
+}
+
+// The module answers arguments that are not an object with -32602; they no
+// longer reach the tool.
+func TestNonObjectArgumentsAreAProtocolError(t *testing.T) {
+	resps := drive(t, `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"lookup","arguments":["example.com"]}}`+"\n")
+	if resps[0].Error == nil || resps[0].Error.Code != -32602 {
+		t.Errorf("array arguments: %+v, want -32602", resps[0])
+	}
+}
+
+// encoding/json matches names case-insensitively; the schema does not. An
+// argument spelt in another case is refused by name.
+func TestAnArgumentInAnotherCaseIsRefused(t *testing.T) {
+	req := `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"lookup","arguments":{"Query":"example.com"}}}` + "\n"
+	text, isErr := toolText(t, drive(t, req)[0])
+	_, msg := structured(t, text)
+	if !isErr || !strings.Contains(msg, `unknown field "Query"`) {
+		t.Errorf("Query was accepted: %s", text)
 	}
 }
